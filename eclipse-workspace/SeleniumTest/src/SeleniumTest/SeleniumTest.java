@@ -54,10 +54,17 @@ public class SeleniumTest {
 	            System.out.println("Modal not present or already closed.");
 	        }
 	        
-	        // Initialize FileWriter for CSV output
-	        FileWriter csvWriter = new FileWriter("C:\\Users\\Faseeh\\eclipse-workspace\\SeleniumTest\\hp_laptops.csv");
-	        csvWriter.append("Brand Name,Product Name,Price,Operating System,Processor,Memory,Storage,Display,Graphics\n");
-	        
+	     // Prepare to write data to CSV file
+            FileWriter csvWriter;
+            try {
+                csvWriter = new FileWriter("C:\\Users\\Faseeh\\eclipse-workspace\\SeleniumTest\\hp_laptops.csv");
+                csvWriter.append("Brand Name,Product Name,Price,Operating System,Processor,Memory,Storage,Display,Graphics\n");
+            } catch (IOException e) {
+                System.out.println("Error: Unable to create or write to the file. Please make sure the file 'hp_laptops.csv' is closed in Excel or any other program.");
+                driver.quit();
+                return;
+            }
+            
 	        String brandName = "HP";
 	        boolean hasNextPage = true;
 	
@@ -73,18 +80,22 @@ public class SeleniumTest {
 		                String name = product.findElement(By.cssSelector(".HorizontalProductTile_infoContainer__1BjHM .HorizontalProductTile_main__1nR2d .Typography-module_titleS__sF7UO")).getText().replace(",", " ");
 		                
 		                String price = product.findElement(By.cssSelector("[data-test-hook='@hpstellar/core/price-block__sale-price']")).getText().replace(",", "");
-		                
-		                // Extract specifications
-		                List<WebElement> specs = product.findElements(By.cssSelector(".HorizontalProductTile_specFirstGlance__3vnhf span")).subList(0, 6);
-	                	String tempSpecs = "";
-		                for (WebElement spec: specs) {
-		                	tempSpecs = tempSpecs + spec.getText().replace(",", " ").replace("\n", " ").replace("Â®", " ").replace("â„¢", " ") + ",";
-//			                System.out.println( price+" : "+ spec.getText().replace(",", " ").replace("\n", " "));
-		                	//product.findElement(By.cssSelector(".product-specs")).getText().replace(",", " ").replace("\n", " ");
+		                try {
+			                // Extract specifications
+		                	List<WebElement> specs = product.findElements(By.cssSelector(".HorizontalProductTile_specFirstGlance__3vnhf span")).subList(0, 6);
+			                String tempSpecs = "";
+			                for (WebElement spec: specs) {
+			                	tempSpecs = tempSpecs + spec.getText().replace(",", " ") + ",";
+	//			                System.out.println( price+" : "+ spec.getText().replace(",", " ").replace("\n", " "));
+			                	//product.findElement(By.cssSelector(".product-specs")).getText().replace(",", " ").replace("\n", " ");
+			                }
+			                csvWriter.append(String.format("%s,%s,%s,%s\n", brandName,name, price,tempSpecs));
+		                } catch (IndexOutOfBoundsException e) {
+		                	System.out.println("Product Name: \'"+name+"\' details are missing. So, skipping this product.");
+		                	continue;
 		                }
 		
 		                // Write to CSV
-		                csvWriter.append(String.format("%s,%s,%s,%s\n", brandName,name, price,tempSpecs));
 		            }
 		
 		            // Check for the presence of a 'Next' button
@@ -103,7 +114,7 @@ public class SeleniumTest {
 		            }
 		        }
 	            catch(Exception e) {
-	    	        System.out.println("No more product found.");
+	    	        System.out.println(e);
 	    	        break;
 	            }
 	            
